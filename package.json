@@ -26,6 +26,7 @@
     "express": "^4.16.4",
     "moment": "^2.24.0",
     "mongoose": "^5.5.8",
+    "swagger-node-codegen": "^1.6.3",
     "swagger-ui-express": "^4.0.7"
   },
   "devDependencies": {

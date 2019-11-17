@@ -1,9 +1,9 @@
 'use strict';
 
 import moment from 'moment';
+import mongoose from 'mongoose'
 
-const mongoose = require('mongoose'),
-    Transaction = mongoose.model('Transaction'),
+const Transaction = mongoose.model('Transaction'),
     Wallet = mongoose.model('Wallet'),
     ActiveWallet = mongoose.model('ActiveWallet');
 
@@ -15,7 +15,7 @@ exports.list = async (req, res, next) => {
         }
     })
 
-    Transaction.find({walletId: currWallet.walletId}, (err, tran) => {
+    Transaction.find({ walletId: currWallet.walletId }, (err, tran) => {
         if (err) {
             next(err)
         }
@@ -24,55 +24,63 @@ exports.list = async (req, res, next) => {
 }
 
 exports.add_transaction = async (req, res, next) => {
-    const data = new Transaction(req.body);
-    const currWallet = await ActiveWallet.findOne({}, (err, model) => {
+    let transaction = new Transaction(req.body);
+    let currWallet = await ActiveWallet.findOne({}, (err, model) => {
         if (err) {
             next(err);
         }
     })
 
-    data.walletId = currWallet.walletId;
+    transaction.walletId = currWallet.walletId;
 
-    const wallet = await Wallet.findById(currWallet.walletId, (err, wallet) => {
+    let wallet = await Wallet.findById(currWallet.walletId, (err, wallet) => {
         if (err) {
             next(err)
         }
     })
 
-    if (data.type === 'outgoing') {
-        wallet.balance -= data.value;
+    if (transaction.type === 'outgoing') {
+        wallet.balance -= transaction.value;
     } else {
-        wallet.balance += data.value;
+        wallet.balance += transaction.value;
     }
 
-    if (moment(data.date).isAfter(moment(wallet.lastExpenses.date))) {
+    if (moment(transaction.date).isAfter(moment(wallet.lastExpenses.date))) {
         wallet.lastExpenses = {
-            date: data.date,
-            value: data.value,
-            currency: data.currency,
-            category: data.category,
-            type: data.type
+            date: transaction.date,
+            value: transaction.value,
+            currency: transaction.currency,
+            category: transaction.category,
+            type: transaction.type
         }
     }
 
-    wallet.save().then(() => {
-        data.save({}, (err, model) => {
-            if (err) {
-                next(err)
-            }
-            res.send(model)
-        })
-    })
+    let session = await mongoose.startSession();
+    
+    try {
+        await session.startTransaction();
+
+        await wallet.save();
+        await transaction.save();
+
+        await session.commitTransaction();
+
+        res.send(transaction);
+    } catch (err) {
+        session.abortTransaction();
+
+        next(err);
+    }
 }
 
-exports.edit_transaction = (req, res) => {
-    const data = new Transaction(req.body)
-    data.findOne()
-        .then(res.send('Saved'))
+exports.edit_transaction = async (req, res) => {
+    let transaction = await Transaction.findById(req.id);
+    transaction = req;
+    await transaction.save();
+    res.send(transaction);
 }
 
-exports.delete = (req, res) => {
-    const data = new Transaction(req.body)
-    data.save()
-        .then(res.send('Saved'))
+exports.delete = async (req, res) => {
+    await Transaction.findByIdAndDelete(req.query.id);
+    res.send({success: true, data: req.query.id})
 }

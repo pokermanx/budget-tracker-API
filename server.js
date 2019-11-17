@@ -6,22 +6,35 @@ require('dotenv').config({ path: 'variables.env' })
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const path = require('path');
+const swaggerCodegen = require('swagger-node-codegen');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
+
 mongoose.Promise = global.Promise;
 mongoose.connect(process.env.DATABASE, {useNewUrlParser: true});
 mongoose.connection.on('error', err => {
     console.log(err)
-})
+});
+
+swaggerCodegen.generate({
+    swagger: swaggerDocument,
+    target_dir: path.resolve('./swagger-codegen')
+  }).then(() => {
+    console.log('Done!');
+  }).catch(err => {
+    console.error(`Something went wrong: ${err.message}`);
+  });
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
     res.send('in');
-})
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+});
 
 app.use(function (req, res, next) {
 
@@ -51,7 +64,7 @@ app.use(function (err, req, res, next) {
     res.status(500).send({
         name: err.name,
         message: err.message
-    })
+    });
 })
 
 

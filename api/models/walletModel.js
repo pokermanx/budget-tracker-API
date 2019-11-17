@@ -11,7 +11,15 @@ const WalletSchema = new Schema({
         required: true
     },
     period: {
-        type: Number,
+        type: Number | String,
+        enum: [
+            "Day",
+            "Week",
+            "Month",
+            "HalfAYear",
+            "Year",
+            "Forever"
+        ]
     },
     currency: {
         type: Number,
