@@ -56,7 +56,7 @@ exports.add_transaction = async (req, res, next) => {
     }
 
     let session = await mongoose.startSession();
-    
+
     try {
         await session.startTransaction();
 
@@ -74,13 +74,12 @@ exports.add_transaction = async (req, res, next) => {
 }
 
 exports.edit_transaction = async (req, res) => {
-    let transaction = await Transaction.findById(req.id);
-    transaction = req;
-    await transaction.save();
-    res.send(transaction);
+    let transaction = await Transaction.findById(req.body.id);
+    await transaction.update(req.body);
+    res.send(req.body);
 }
 
 exports.delete = async (req, res) => {
     await Transaction.findByIdAndDelete(req.query.id);
-    res.send({success: true, data: req.query.id})
+    res.send({ success: true, data: req.query.id })
 }
