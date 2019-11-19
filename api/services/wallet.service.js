@@ -14,7 +14,12 @@ class WalletService {
 
     async changeLastActionIfEarliest(walletId, newTransaction) {
         const wallet = await this._walletRepository.findById(walletId);
-        if (moment(newTransaction.date).isAfter(moment(wallet.lastExpenses.date)) || moment(newTransaction.date).isSame(moment(wallet.lastExpenses.date))) {
+        if (
+            !wallet.lastExpenses
+            || !wallet.lastExpenses.date
+            || moment(newTransaction.date).isAfter(moment(wallet.lastExpenses.date))
+            || moment(newTransaction.date).isSame(moment(wallet.lastExpenses.date))
+        ) {
             wallet.lastExpenses = {
                 date: newTransaction.date,
                 value: newTransaction.value,
@@ -22,8 +27,15 @@ class WalletService {
                 category: newTransaction.category,
                 type: newTransaction.type
             };
-            return wallet.save();
+            return await wallet.save();
         }
+    }
+
+    async forceSetLastAction(walletId, transaction) {
+        const wallet = await this._walletRepository.findById(walletId);
+        wallet.lastExpenses = transaction;
+
+        return await wallet.save();
     }
 
     async getActiveWallet() {
@@ -37,7 +49,7 @@ class WalletService {
         } else {
             wallet.balance += +transaction.value;
         }
-        return wallet.save();
+        return await wallet.save();
     }
 
     async updateWalletBalanceEdit(walletId, oldTran, newTran) {
@@ -52,7 +64,7 @@ class WalletService {
         } else {
             wallet.balance += +newTran.value;
         }
-        return wallet.save();
+        return await wallet.save();
     }
 
     async updateWalletBalanceDelete(walletId, transaction) {
@@ -62,7 +74,7 @@ class WalletService {
         } else {
             wallet.balance -= +transaction.value;
         }
-        return wallet.save();
+        return await wallet.save();
     }
 }
 

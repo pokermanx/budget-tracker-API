@@ -2,37 +2,30 @@
 
 import mongoose from 'mongoose'
 import { walletService } from '../services/wallet.service'
+import { budgetService } from '../services/budgets.service'
+import { transactionsService } from '../services/transactions.service'
 
-const Transaction = mongoose.model('Transaction'),
-    Wallet = mongoose.model('Wallet'),
-    ActiveWallet = mongoose.model('ActiveWallet');
+const Transaction = mongoose.model('Transaction')
 
 exports.list = async (req, res, next) => {
-
     const currWallet = await walletService.getActiveWallet();
-
-    Transaction.find({ walletId: currWallet.walletId }, (err, tran) => {
-        if (err) {
-            next(err)
-        }
-        res.send(tran)
-    });
+    const transactions = await transactionsService.getAllForWallet(currWallet.walletId);
+    res.send(transactions);
 }
 
 exports.add_transaction = async (req, res, next) => {
     const transaction = new Transaction(req.body);
-
     const currWallet = await walletService.getActiveWallet();
 
     transaction.walletId = currWallet.walletId;
 
     const session = await mongoose.startSession();
-
     try {
         await session.startTransaction();
 
         await walletService.changeLastActionIfEarliest(currWallet.walletId, transaction);
         await walletService.updateWalletBalance(currWallet.walletId, transaction);
+        await budgetService.updateValueByCategory(currWallet.walletId, transaction.category, transaction.value);
         await transaction.save();
 
         await session.commitTransaction();
@@ -47,8 +40,8 @@ exports.add_transaction = async (req, res, next) => {
 
 exports.edit_transaction = async (req, res, next) => {
     const transaction = await Transaction.findById(req.body._id);
-
     const currWallet = await walletService.getActiveWallet();
+
     const session = await mongoose.startSession();
     try {
         await session.startTransaction();
@@ -69,16 +62,18 @@ exports.edit_transaction = async (req, res, next) => {
 
 exports.delete = async (req, res, next) => {
     const transaction = await Transaction.findById(req.query.id);
-
     const currWallet = await walletService.getActiveWallet();
+
     const session = await mongoose.startSession();
 
     try {
         await session.startTransaction();
 
-        await walletService.changeLastActionIfEarliest(currWallet.walletId, req.body);
         await walletService.updateWalletBalanceDelete(currWallet.walletId, transaction);
         await Transaction.findByIdAndDelete(req.query.id);
+
+        const lastTransaction = await transactionsService.getLatestTransaction();
+        await walletService.forceSetLastAction(currWallet.walletId, lastTransaction);
 
         await session.commitTransaction();
 

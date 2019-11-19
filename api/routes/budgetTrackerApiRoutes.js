@@ -4,11 +4,17 @@ import Wallet from '../models/walletModel';
 import ActiveWallet from '../models/activeWalletModel';
 import Transaction from '../models/transactionModel';
 import Category from '../models/categoryModel';
+import budgetModel from '../models/budgetModel';
 
 module.exports = function (app) {
   const transactions = require('../controllers/transactionController');
   const wallets = require('../controllers/walletController')
   const walletCategories = require('../controllers/walletCategoriesController')
+  const budgets = require('../controllers/budgetsController')
+
+  app.route('/budgets')
+    .get(budgets.list)
+    .post(budgets.add_budget)
 
   app.route('/transactions')
     .get(transactions.list)
