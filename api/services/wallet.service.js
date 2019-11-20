@@ -54,6 +54,7 @@ class WalletService {
 
     async updateWalletBalanceEdit(walletId, oldTran, newTran) {
         const wallet = await this._walletRepository.findById(walletId);
+        console.log(oldTran, newTran)
         if (oldTran.type === 'outgoing') {
             wallet.balance += +oldTran.value;
         } else {

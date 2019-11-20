@@ -15,6 +15,8 @@ module.exports = function (app) {
   app.route('/budgets')
     .get(budgets.list)
     .post(budgets.add_budget)
+    .put(budgets.edit_budget)
+    .delete(budgets.delete_budget)
 
   app.route('/transactions')
     .get(transactions.list)

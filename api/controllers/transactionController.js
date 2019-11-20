@@ -48,6 +48,8 @@ exports.edit_transaction = async (req, res, next) => {
 
         await walletService.changeLastActionIfEarliest(currWallet.walletId, req.body);
         await walletService.updateWalletBalanceEdit(currWallet.walletId, transaction, req.body);
+        await budgetService.updateValueByCategoryEdit(currWallet.walletId, transaction, req.body);
+
         await transaction.update(req.body);
 
         await session.commitTransaction();
@@ -73,6 +75,7 @@ exports.delete = async (req, res, next) => {
         await Transaction.findByIdAndDelete(req.query.id);
 
         const lastTransaction = await transactionsService.getLatestTransaction();
+        await budgetService.updateValueByCategory(currWallet.walletId, transaction.category, -transaction.value);
         await walletService.forceSetLastAction(currWallet.walletId, lastTransaction);
 
         await session.commitTransaction();

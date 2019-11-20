@@ -21,6 +21,18 @@ class BudgetService {
             return el;
         });
     }
+
+    async updateValueByCategoryEdit(walletId, oldTran, newTran) {
+        const budgets = await this.getAllForWallet(walletId);
+
+        return budgets.forEach(async el => {
+            if (el.categories.includes(category)) {
+                el.valueUsed += +newTran.value - +oldTran.value;
+            }
+            await el.save();
+            return el;
+        });
+    }
 }
 
 export const budgetService = new BudgetService();

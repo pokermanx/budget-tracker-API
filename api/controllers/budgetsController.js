@@ -10,7 +10,7 @@ exports.list = async (req, res, next) => {
     const currWallet = await walletService.getActiveWallet();
     const budgets = await budgetService.getAllForWallet(currWallet.walletId);
     res.send(budgets);
-}
+};
 
 exports.add_budget = async (req, res, next) => {
     const budget = new Budget(req.body);
@@ -20,4 +20,14 @@ exports.add_budget = async (req, res, next) => {
     await budget.save();
 
     res.send(budget);
-}
+};
+
+exports.edit_budget = async (req, res, next) => {
+    await Budget.findByIdAndDelete(req.query.id);
+    res.send({ success: true, data: req.query.id })
+};
+
+exports.delete_budget = async (req, res, next) => {
+    await Budget.findByIdAndDelete(req.query.id);
+    res.send({ success: true, data: req.query.id })
+};
